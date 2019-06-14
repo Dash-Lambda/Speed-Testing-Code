@@ -3,12 +3,11 @@ package general_testing
 import java.io.{File, PrintWriter}
 
 import common.TryAll
+
 import ichi.bench.Thyme
 import ichi.bench.Thyme.Benched
 
 import scala.collection.mutable.ArrayBuffer
-import spire.implicits._
-
 import scala.util.{Failure, Success}
 
 object GenTester extends App{

@@ -1,31 +1,82 @@
 package general_testing
 
-import ichi.bench._
+import GenTester.benchRun
 import spire.implicits._
 import spire.math.SafeLong
-import GenTester.benchRun
 import spire.tailrec
 
 object Runner {
   def main(args: Array[String]): Unit = {
-    val inputs = Vector.range(50000, 101000, 1000)
-    val id = 11
-    val nam = "Primes"
+    val inputs = Vector.range(1000, 101000, 1000)
+    val id = 12
+    val name = "Fibonacci"
     
-    val funcs = Vector[(String, Int => Any)](
-      ("Lazy", pLaz),
-      ("Imperative", pImp),
-      ("Imperative_Alt", pImpAlt),
-      ("List_Recursion", pLstRec),
-      ("List_Tail_Recursion", pLstTrec),
-      ("Vector_Recursion", pVecRec),
-      ("Vector_Tail_Recursion", pVecTrec)
-    )
+    val funcs = name match{
+      case "Fibonacci" =>
+        Vector[(String, Int => SafeLong)](
+          ("Lazy", fibLaz),
+          ("Imperative", fibImp),
+          //("Recursive", fibRec),
+          ("Tail_Recursive", fibTrec))
+      case "Primes" =>
+        Vector[(String, Int => Any)](
+          ("Lazy", pLaz),
+          ("Imperative", pImp),
+          ("Imperative_Alt", pImpAlt),
+          ("List_Recursion", pLstRec),
+          ("List_Tail_Recursion", pLstTrec),
+          ("Vector_Recursion", pVecRec),
+          ("Vector_Tail_Recursion", pVecTrec))
+    }
     
-    benchRun(inputs, id, nam)(funcs)
+    if(id >= 0){
+      benchRun(inputs, id, name)(funcs)
+    }else{
+      for((_, func) <- funcs){
+        for(n <- 0 to 50){
+          print(s"${func(n)} ")
+        }
+        println
+      }
+    }
   }
   
-  //Lazy evaluation
+  //Fibonacci Lazy Evaluation
+  def fibLaz(num: Int): SafeLong = Stream.iterate((SafeLong(0), SafeLong(1))){case (a: SafeLong, b: SafeLong) => (b, a + b)}.map(_._1).take(num + 1).last
+  
+  //Fibonacci Imperative
+  def fibImp(num: Int): SafeLong = {
+    var a = SafeLong(0)
+    var b = SafeLong(1)
+    var c = SafeLong(1)
+    
+    cfor(0)(_ < num, _ + 1){_ =>
+      a = b
+      b = c
+      c = a + b
+    }
+    
+    a
+  }
+  
+  //Fibonacci Recursion
+  def fibRec(num: Int): SafeLong = num match{
+    case 0 => SafeLong(0)
+    case 1 => SafeLong(1)
+    case _ => fibRec(num - 1) + fibRec(num - 2)
+  }
+  
+  //Fibonacci Tail Recursion
+  def fibTrec(num: Int): SafeLong = {
+    @tailrec
+    def fHTrec(n: Int)(a: SafeLong, b: SafeLong): SafeLong = n match{
+      case 0 => a
+      case _ => fHTrec(n - 1)(b, a + b)
+    }
+    fHTrec(num)(SafeLong(0), SafeLong(1))
+  }
+  
+  //Lazy Evaluation
   def pLaz(max: Int): List[Int] = {
     def odds: Stream[Int] = Stream.from(3, 2).takeWhile(n => n*n <= max)
     def composites: Stream[Int] = odds.flatMap(n => Stream.from(n*n, 2*n).takeWhile(_ <= max))
@@ -46,7 +97,7 @@ object Runner {
     2 +: (for(i <- arr.indices if arr(i)) yield 2*i + 1).tail.toList
   }
   
-  //Imperative without only-odds optimization
+  //Imperative (without only-odds optimization)
   def pImpAlt(max: Int): List[Int] = {
     val arr = Array.fill(max + 1)(true)
     arr(0) = false
